@@ -36,7 +36,7 @@ public class Scene2Manager : MonoBehaviour
 
     void Update()
     {
-      if (touchPressAction.WasPerformedThisFrame())
+      if (touchPressAction.IsPressed())
       {
         OnTouch();
       }
