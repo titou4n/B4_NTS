@@ -42,7 +42,7 @@ The game includes a score display, and players can win or lose based on their pe
 - ARCore or another AR SDK
 
 ## License
-This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 
