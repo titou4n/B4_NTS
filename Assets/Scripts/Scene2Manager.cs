@@ -21,6 +21,8 @@ public class Scene2Manager : MonoBehaviour
     
     private LineRenderer currentLine;
     private List<Vector3> linePoints = new List<Vector3>();
+
+    private float _sikness; //epaisseur
     
     //________________________________________//
     //_______________For_CPT__________________//
@@ -45,6 +47,7 @@ public class Scene2Manager : MonoBehaviour
         touchPosAction = PlayerInput.actions["TouchPos"];
         _timing = 60;
         CptUi.SetActive(true);
+        _sikness = 0.01f;
     }
     
     void Update()
@@ -75,29 +78,17 @@ public class Scene2Manager : MonoBehaviour
     
     public void SetSize1()
     {
-        if (currentLine != null)
-        {
-            currentLine.startWidth = 0.01f;
-            currentLine.endWidth = 0.01f;
-        }
+        _sikness = 0.01f;
     }
 
     public void SetSize2()
     {
-        if (currentLine != null)
-        {
-            currentLine.startWidth = 0.05f;
-            currentLine.endWidth = 0.05f;
-        }
+        _sikness = 0.05f;
     }
 
     public void SetSize3()
     {
-        if (currentLine != null)
-        {
-            currentLine.startWidth = 0.1f;
-            currentLine.endWidth = 0.1f;
-        }
+        _sikness = 0.1f;
     }
 
     private void StartNewLine(Vector3 startPosition)
@@ -106,8 +97,8 @@ public class Scene2Manager : MonoBehaviour
         currentLine = lineObj.AddComponent<LineRenderer>();
         
         currentLine.material = new Material(Shader.Find("Sprites/Default"));
-        currentLine.startWidth = 0.01f; // Valeur par défaut
-        currentLine.endWidth = 0.01f; // Valeur par défaut
+        currentLine.startWidth = _sikness;
+        currentLine.endWidth = _sikness;
         currentLine.positionCount = 0;
         currentLine.useWorldSpace = true;
         
