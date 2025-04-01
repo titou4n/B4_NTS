@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class Scene2Manager : MonoBehaviour
 {
@@ -165,6 +166,12 @@ public class Scene2Manager : MonoBehaviour
     
     private void OnTouch()
     {
+        if (EventSystem.current.IsPointerOverGameObject())
+    {
+        return; // Évite de dessiner quand on clique sur un bouton
+    }
+    Debug.Log("Touch detected!");
+
         var touchPos = touchPosAction.ReadValue<Vector2>();
         List<ARRaycastHit> hits = new List<ARRaycastHit>();
         RaycastManager.Raycast(touchPos, hits, TypeToTrack);
