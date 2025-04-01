@@ -7,6 +7,7 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
 
 public class Scene2Manager : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class Scene2Manager : MonoBehaviour
     private InputAction touchPressAction;
     private InputAction touchPosAction;
     
-    public Image StatusColor;
+    public UnityEngine.UI.Image StatusColor;
     private string colorSelected = "red";
     
     private LineRenderer currentLine;
@@ -228,6 +229,21 @@ public class Scene2Manager : MonoBehaviour
                         PaintBar.SetText(currentPaint + " / " + maxPaint);
                         //Debug.Log(currentPaint + " / " + maxPaint);
                     }
+                    break;
+                case "erase all":
+                    //Debug.Log("Erase everything");
+                    currentPaint = 0;
+                    paintBarRect.sizeDelta = new Vector2(0, paintBarRect.sizeDelta.y);
+                    PaintBarUI.SetActive(false);
+
+                    foreach (GameObject line in drawnLines)
+                    {
+                        if (line != null)
+                        {
+                            Destroy(line);
+                        }
+                    }
+
                     break;
             }
         }
