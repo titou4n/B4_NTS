@@ -23,12 +23,17 @@ public class Scene2Manager : MonoBehaviour
     private LineRenderer currentLine;
     private List<Vector3> linePoints = new List<Vector3>();
     private List<GameObject> drawnLines = new List<GameObject>(); // Liste des lignes créées
+    private int currentPaint; // Quantité de peinture utilisée
+    private int maxPaint;
 
     private float _sikness; // Épaisseur
     
     // Timer
     public GameObject CptUi;
     public TMP_Text Cpt;
+    public GameObject PaintBarUI;
+    public TMP_Text PaintBar;
+    public RectTransform paintBarRect;
     private float _timing;
     private bool canDraw = true;
     
@@ -42,7 +47,10 @@ public class Scene2Manager : MonoBehaviour
         touchPosAction = PlayerInput.actions["TouchPos"];
         _timing = 60;
         CptUi.SetActive(true);
+        PaintBarUI.SetActive(false);
         _sikness = 0.01f;
+        currentPaint = 0;
+        maxPaint = 100;
     }
 
     public void ChangeTool(string tool)
@@ -59,7 +67,7 @@ public class Scene2Manager : MonoBehaviour
             _timing -= Time.deltaTime;
             if (_timing <= 0)
             {
-                Cpt.SetText("This is done ...");
+                Cpt.SetText("Time's up !");
                 canDraw = false;
             }
             else
@@ -170,7 +178,7 @@ public class Scene2Manager : MonoBehaviour
     {
         return; // Évite de dessiner quand on clique sur un bouton
     }
-    Debug.Log("Touch detected!");
+   // Debug.Log("Touch detected!");
 
         var touchPos = touchPosAction.ReadValue<Vector2>();
         List<ARRaycastHit> hits = new List<ARRaycastHit>();
@@ -185,7 +193,19 @@ public class Scene2Manager : MonoBehaviour
                 case "pen":
                     if (currentLine == null)
                     {
-                        StartNewLine(hitPosition);
+                        if (currentPaint < maxPaint)
+                        {
+                            StartNewLine(hitPosition);
+                            currentPaint += 1;
+                            PaintBarUI.SetActive(true);
+                            PaintBar.SetText(currentPaint + " / " + maxPaint);
+                            int paintPercent = currentPaint * 100 / maxPaint;
+                            int percent = paintPercent * 660 / 100;
+                            
+                            paintBarRect.sizeDelta = new Vector2(percent, paintBarRect.sizeDelta.y);
+                            //Debug.Log(currentPaint + " / " + maxPaint);
+                        }
+                        
                     }
                     AddPointToLine(hitPosition);
                     break;
@@ -196,7 +216,17 @@ public class Scene2Manager : MonoBehaviour
                     {
                         drawnLines.Remove(lineToErase);
                         Destroy(lineToErase);
-                        Debug.Log("Line erased!");
+                        currentPaint -= 1;
+                        int paintPercent = currentPaint * 100 / maxPaint;
+                        int percent = paintPercent * 660 / 100;
+
+                        paintBarRect.sizeDelta = new Vector2(percent, paintBarRect.sizeDelta.y);
+                        if (currentPaint == 0)
+                        {
+                            PaintBarUI.SetActive(false);
+                        }
+                        PaintBar.SetText(currentPaint + " / " + maxPaint);
+                        //Debug.Log(currentPaint + " / " + maxPaint);
                     }
                     break;
             }
