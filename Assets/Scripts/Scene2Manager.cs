@@ -37,6 +37,7 @@ public class Scene2Manager : MonoBehaviour
     public string[] tools = { "pen", "eraser" };
     public AudioSource audioSource;
     public AudioClip clickSound;
+    public AudioClip bestSoundEver;
     
     void Start()
     {
@@ -106,6 +107,12 @@ public class Scene2Manager : MonoBehaviour
                         drawnLines.Remove(lineToErase);
                         Destroy(lineToErase);
                         Debug.Log("Line erased!");
+                    }
+
+                    if (audioSource != null)
+                    {
+                        audioSource.Stop();
+                        audioSource.PlayOneShot(bestSoundEver);
                     }
                     break;
             }

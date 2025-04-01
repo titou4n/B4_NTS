@@ -1730,6 +1730,7 @@ MonoBehaviour:
   - eraser
   audioSource: {fileID: 728779911}
   clickSound: {fileID: 8300000, guid: f7abaf5b2e123484c840a0d7727181a5, type: 3}
+  bestSoundEver: {fileID: 8300000, guid: 88ff05a33e37c4b4ba5793cec572a278, type: 3}
 --- !u!4 &1604289123
 Transform:
   m_ObjectHideFlags: 0
