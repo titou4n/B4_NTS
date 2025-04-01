@@ -25,11 +25,14 @@ public class Scene2Manager : MonoBehaviour
 
     private float _sikness; // Épaisseur
     
-    // Timer
+    //_____________________Timer____________________________
+    
     public GameObject CptUi;
     public TMP_Text Cpt;
     private float _timing;
     private bool canDraw = true;
+    
+    //______________________________________________________
     
     public GameObject particleEffectPrefab;
     private string tool = "pen";
