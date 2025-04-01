@@ -21,25 +21,19 @@ public class Scene2Manager : MonoBehaviour
     
     private LineRenderer currentLine;
     private List<Vector3> linePoints = new List<Vector3>();
+    private List<GameObject> drawnLines = new List<GameObject>(); // Liste des lignes créées
 
-    private float _sikness; //epaisseur
+    private float _sikness; // Épaisseur
     
-    //________________________________________//
-    //_______________For_CPT__________________//
-    //________________________________________//
-    
+    // Timer
     public GameObject CptUi;
     public TMP_Text Cpt;
-    
     private float _timing;
     private bool canDraw = true;
     
-    //________________________________________//
-    //________________________________________//
-    //________________________________________//
-    
-    // Effet de particules
     public GameObject particleEffectPrefab;
+    private string tool = "pen";
+    public string[] tools = { "pen", "eraser" };
     
     void Start()
     {
@@ -49,6 +43,13 @@ public class Scene2Manager : MonoBehaviour
         CptUi.SetActive(true);
         _sikness = 0.01f;
     }
+
+    public void ChangeTool(string tool)
+    {
+        this.tool = tool;
+        // tool = tools[(Array.FindIndex(tools, t => t == tool) + 1) % tools.Length];
+        // Debug.Log("Tool changed to: " + tool);
+    }
     
     void Update()
     {
@@ -57,8 +58,8 @@ public class Scene2Manager : MonoBehaviour
             _timing -= Time.deltaTime;
             if (_timing <= 0)
             {
-                Cpt.SetText($"This is done ...");
-                canDraw = false; // Désactive le dessin lorsque le compteur est à 0
+                Cpt.SetText("This is done ...");
+                canDraw = false;
             }
             else
             {
@@ -66,7 +67,7 @@ public class Scene2Manager : MonoBehaviour
             }
         }
         
-        if (canDraw && touchPressAction.IsPressed()) // On permet le dessin uniquement si canDraw est vrai
+        if (canDraw && touchPressAction.IsPressed())
         {
             OnTouch();
         }
@@ -75,37 +76,40 @@ public class Scene2Manager : MonoBehaviour
             currentLine = null;
         }
     }
+
+      public void SetSize(int size)
+    {
+        switch (size) {
+            case 1:
+                _sikness = 0.01f;
+                break;
+            case 2:
+                _sikness = 0.05f;
+                break;
+            case 3:
+                _sikness = 0.1f;
+                break;
+            default:
+                _sikness = 0.01f;
+                break;
+        }
+    }
     
-    public void SetSize1()
-    {
-        _sikness = 0.01f;
-    }
-
-    public void SetSize2()
-    {
-        _sikness = 0.05f;
-    }
-
-    public void SetSize3()
-    {
-        _sikness = 0.1f;
-    }
-
     private void StartNewLine(Vector3 startPosition)
     {
         GameObject lineObj = new GameObject("Line");
-        currentLine = lineObj.AddComponent<LineRenderer>();
+        lineObj.tag = "Line";
         
+        currentLine = lineObj.AddComponent<LineRenderer>();
         currentLine.material = new Material(Shader.Find("Sprites/Default"));
         currentLine.startWidth = _sikness;
         currentLine.endWidth = _sikness;
         currentLine.positionCount = 0;
         currentLine.useWorldSpace = true;
-        
-        // Appliquer la couleur sélectionnée
         currentLine.startColor = GetColorFromName(colorSelected);
         currentLine.endColor = GetColorFromName(colorSelected);
-        
+
+        drawnLines.Add(lineObj);
         linePoints.Clear();
         AddPointToLine(startPosition);
     }
@@ -117,43 +121,78 @@ public class Scene2Manager : MonoBehaviour
         linePoints.Add(newPoint);
         currentLine.positionCount = linePoints.Count;
         currentLine.SetPositions(linePoints.ToArray());
-        
-        // Ajouter un effet de particules à la position du nouveau point
+
         CreateParticleEffect(newPoint);
     }
-
+    
     private Color GetColorFromName(string color)
     {
-        switch (color)
+        return color switch
         {
-            case "red": return Color.red;
-            case "green": return Color.green;
-            case "blue": return Color.blue;
-            case "yellow": return Color.yellow;
-            case "pink": return new Color(1.0f, 0.75f, 0.8f);
-            case "black": return Color.black;
-            case "white": return Color.white;
-            default: return Color.white;
-        }
+            "red" => Color.red,
+            "green" => Color.green,
+            "blue" => Color.blue,
+            "yellow" => Color.yellow,
+            "pink" => new Color(1.0f, 0.75f, 0.8f),
+            "black" => Color.black,
+            "white" => Color.white,
+            _ => Color.white,
+        };
     }
+    
+    private GameObject FindClosestLine(Vector3 position)
+    {
+        GameObject closestLine = null;
+        float minDistance = Mathf.Infinity;
 
+        foreach (GameObject line in drawnLines)
+        {
+            LineRenderer lr = line.GetComponent<LineRenderer>();
+            if (lr == null) continue;
+
+            for (int i = 0; i < lr.positionCount; i++)
+            {
+                float distance = Vector3.Distance(lr.GetPosition(i), position);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestLine = line;
+                }
+            }
+        }
+        return minDistance < 0.05f ? closestLine : null; // pour eviter de tout suprimer d'un coup
+    }
+    
     private void OnTouch()
     {
         var touchPos = touchPosAction.ReadValue<Vector2>();
-        
         List<ARRaycastHit> hits = new List<ARRaycastHit>();
         RaycastManager.Raycast(touchPos, hits, TypeToTrack);
         
         if (hits.Count > 0)
         {
             Vector3 hitPosition = hits[0].pose.position;
-
-            if (currentLine == null)
-            {
-                StartNewLine(hitPosition);
-            }
             
-            AddPointToLine(hitPosition);
+            switch (tool)
+            {
+                case "pen":
+                    if (currentLine == null)
+                    {
+                        StartNewLine(hitPosition);
+                    }
+                    AddPointToLine(hitPosition);
+                    break;
+                
+                case "eraser":
+                    GameObject lineToErase = FindClosestLine(hitPosition);
+                    if (lineToErase != null)
+                    {
+                        drawnLines.Remove(lineToErase);
+                        Destroy(lineToErase);
+                        Debug.Log("Line erased!");
+                    }
+                    break;
+            }
         }
     }
     
@@ -161,22 +200,14 @@ public class Scene2Manager : MonoBehaviour
     {
         colorSelected = color;
         StatusColor.color = GetColorFromName(color);
-        
-        if (currentLine != null)
-        {
-            currentLine.startColor = GetColorFromName(color);
-            currentLine.endColor = GetColorFromName(color);
-        }
     }
     
     private void CreateParticleEffect(Vector3 position)
     {
         if (particleEffectPrefab != null)
         {
-            // Instancier le prefab d'effet de particules à la position
             GameObject particleEffect = Instantiate(particleEffectPrefab, position, Quaternion.identity);
             Destroy(particleEffect, 0.5f);
         }
     }
 }
-
