@@ -8,6 +8,7 @@ using UnityEngine.XR.ARSubsystems;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
+using Unity.VisualScripting;
 
 public class Scene2Manager : MonoBehaviour
 {
@@ -44,6 +45,7 @@ public class Scene2Manager : MonoBehaviour
     public AudioSource audioSource;
     public AudioClip clickSound;
     public AudioClip bestSoundEver;
+    public GameObject CubePrefab;
     
     void Start()
     {
@@ -122,6 +124,16 @@ public class Scene2Manager : MonoBehaviour
                         audioSource.Stop();
                         audioSource.PlayOneShot(bestSoundEver);
                     }
+                    break;
+                case "cube":
+                    if (hits.Count > 0)
+                        {
+                        ARRaycastHit firstHit = hits[0];
+                        var c = Instantiate(CubePrefab, firstHit.pose.position, firstHit.pose.rotation);
+                        c.GetComponent<Renderer>().material.color = GetColorFromName(colorSelected);
+                        c.transform.localScale = new Vector3(_sikness, _sikness, _sikness);
+                        }
+
                     break;
             }
         }
