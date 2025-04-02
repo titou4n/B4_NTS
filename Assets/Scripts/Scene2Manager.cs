@@ -1,14 +1,10 @@
-using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using UnityEngine.UIElements;
-using Unity.VisualScripting;
 
 public class Scene2Manager : MonoBehaviour
 {
@@ -25,6 +21,8 @@ public class Scene2Manager : MonoBehaviour
     private LineRenderer currentLine;
     private List<Vector3> linePoints = new List<Vector3>();
     private List<GameObject> drawnLines = new List<GameObject>(); // Liste des lignes créées
+    private List<GameObject> ListCube = new List<GameObject>(); // Liste des cubes créées
+    
     private int currentPaint; // Quantité de peinture utilisée
     private int maxPaint;
 
@@ -41,7 +39,6 @@ public class Scene2Manager : MonoBehaviour
     
     public GameObject particleEffectPrefab;
     private string tool = "pen";
-    public string[] tools = { "pen", "eraser" };
     public AudioSource audioSource;
     public AudioClip clickSound;
     public AudioClip bestSoundEver;
@@ -51,9 +48,11 @@ public class Scene2Manager : MonoBehaviour
     {
         touchPressAction = PlayerInput.actions["TouchPress"];
         touchPosAction = PlayerInput.actions["TouchPos"];
-        _timing = 60;
+        
         CptUi.SetActive(true);
         PaintBarUI.SetActive(false);
+        
+        _timing = 60;
         _sikness = 0.01f;
         currentPaint = 0;
         maxPaint = 100;
@@ -74,6 +73,11 @@ public class Scene2Manager : MonoBehaviour
                 Cpt.SetText($"{_timing:F1} s");
             }
         }
+
+        if (currentPaint >= maxPaint)
+        {
+            Cpt.SetText("YOU WON !!!!");
+        }
         
         if (canDraw && touchPressAction.IsPressed())
         {
@@ -88,9 +92,9 @@ public class Scene2Manager : MonoBehaviour
  private void OnTouch()
     {
         if (EventSystem.current.IsPointerOverGameObject())
-    {
-        return; // Évite de dessiner quand on clique sur un bouton
-    }
+        {
+            return; // Évite de dessiner quand on clique sur un bouton
+        }
 
         var touchPos = touchPosAction.ReadValue<Vector2>();
         List<ARRaycastHit> hits = new List<ARRaycastHit>();
@@ -105,7 +109,12 @@ public class Scene2Manager : MonoBehaviour
                 case "pen":
                     if (currentLine == null)
                     {
-                        StartNewLine(hitPosition);
+                        if (currentPaint < maxPaint)
+                        {
+                            currentPaint += 1;
+                            UpdateScore();
+                            StartNewLine(hitPosition);
+                        }
                     }
                     AddPointToLine(hitPosition);
                     break;
@@ -116,7 +125,15 @@ public class Scene2Manager : MonoBehaviour
                     {
                         drawnLines.Remove(lineToErase);
                         Destroy(lineToErase);
-                        Debug.Log("Line erased!");
+                        
+                        currentPaint -= 1;
+                        
+                        UpdateScore();
+                        
+                        if (currentPaint == 0)
+                        {
+                            PaintBarUI.SetActive(false);
+                        } 
                     }
 
                     if (audioSource != null)
@@ -125,18 +142,68 @@ public class Scene2Manager : MonoBehaviour
                         audioSource.PlayOneShot(bestSoundEver);
                     }
                     break;
+                
+                case "erase all":
+                    
+                    currentPaint = 0;
+                    
+                    PaintBarUI.SetActive(false);
+                    foreach (GameObject line in drawnLines)
+                    {
+                        if (line != null)
+                        {
+                            Destroy(line);
+                        }
+                    }
+                    foreach (GameObject cube in ListCube)
+                    {
+                        if (cube != null)
+                        {
+                            Destroy(cube);
+                        }
+                    }
+
+                    drawnLines = new List<GameObject>();
+                    ListCube = new List<GameObject>();
+                    break;
+                
                 case "cube":
                     if (hits.Count > 0)
+                    {
+                        
+                        if (currentPaint < maxPaint)
                         {
-                        ARRaycastHit firstHit = hits[0];
-                        var c = Instantiate(CubePrefab, firstHit.pose.position, firstHit.pose.rotation);
-                        c.GetComponent<Renderer>().material.color = GetColorFromName(colorSelected);
-                        c.transform.localScale = new Vector3(_sikness, _sikness, _sikness);
+                            currentPaint += 1;
+                            
+                            UpdateScore();
+                            
+                            ARRaycastHit firstHit = hits[0];
+                            var c = Instantiate(CubePrefab, firstHit.pose.position, firstHit.pose.rotation);
+                            c.GetComponent<Renderer>().material.color = GetColorFromName(colorSelected);
+                            c.transform.localScale = new Vector3(_sikness, _sikness, _sikness);
+                            
+                            ListCube.Add(c);
+                            
                         }
+                    }
 
                     break;
             }
+            UpdateScore();
         }
+    }
+
+
+    private void UpdateScore()
+    {
+        /*
+        int paintPercent = (currentPaint * 100 / maxPaint);
+        int percent = paintPercent * 660 / 100;
+
+        paintBarRect.sizeDelta = new Vector2(percent, paintBarRect.sizeDelta.y);
+        */
+        PaintBarUI.SetActive(true);
+        PaintBar.SetText(currentPaint + " / " + maxPaint);
     }
    
     
@@ -213,11 +280,9 @@ public class Scene2Manager : MonoBehaviour
         return minDistance < 0.05f ? closestLine : null; // pour eviter de tout suprimer d'un coup
     }
     
-   
-    
-/***************** change somthing *******************/
+    /***************** change somthing *******************/
 
- public void ChangeTool(string tool)
+    public void ChangeTool(string tool)
     {
         this.tool = tool;
         ClickSound();
@@ -247,9 +312,6 @@ public class Scene2Manager : MonoBehaviour
         StatusColor.color = GetColorFromName(color);
         ClickSound();
     }
-    
-
-
 
     /*************** effects *******************/
     
@@ -259,20 +321,20 @@ public class Scene2Manager : MonoBehaviour
             audioSource.PlayOneShot(clickSound);
         }
     }
-        private void CreateParticleEffect(Vector3 position)
-{
-    if (particleEffectPrefab != null)
+    private void CreateParticleEffect(Vector3 position)
     {
-        GameObject particleEffect = Instantiate(particleEffectPrefab, position, Quaternion.identity);
-        ParticleSystem ps = particleEffect.GetComponent<ParticleSystem>();
-        if (ps != null)
+        if (particleEffectPrefab != null)
         {
-            ParticleSystem.MainModule main = ps.main;
-            main.startColor = GetColorFromName(colorSelected);
+            GameObject particleEffect = Instantiate(particleEffectPrefab, position, Quaternion.identity);
+            ParticleSystem ps = particleEffect.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.startColor = GetColorFromName(colorSelected);
+            }
+            
+            Destroy(particleEffect, 0.5f);
         }
-        
-        Destroy(particleEffect, 0.5f);
     }
-}
 
 }
