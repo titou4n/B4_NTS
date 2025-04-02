@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6052769604093797715}
   - component: {fileID: 9026995810719510055}
   m_Layer: 0
-  m_Name: EnemyCube
+  m_Name: Cubeprefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
